@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright (c) Report URI. All rights reserved.
+ * See LICENSE for the licence details.
+ *
+ * Run from the Magento root:
+ *   vendor/bin/phpunit -c vendor/report-uri/magento2-csp-reporting/phpunit.xml.dist
+ *
+ * The module's tests are also picked up by Magento's own dev/tests/unit run, but that suite
+ * carries thousands of unrelated warnings; this config keeps a failure here readable.
+ */
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         bootstrap="Test/Unit/bootstrap.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache">
+    <testsuites>
+        <testsuite name="ReportUri_CspReporting">
+            <directory>Test/Unit</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>Model</directory>
+            <directory>Plugin</directory>
+        </include>
+    </source>
+</phpunit>

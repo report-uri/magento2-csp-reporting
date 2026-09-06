@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright (c) Report URI. All rights reserved.
+ * See LICENSE for the licence details.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <csp>
+            <reporturi>
+                <!-- On by default: the two enforcing pages are the ones worth telling apart,
+                     and a merchant who wants one merged data set can say so. -->
+                <!-- Free: no extra reports, just more detail in the ones already sent. -->
+                <report_sample>1</report_sample>
+                <!-- Integrity telemetry is sent for every script on every page load, so the
+                     volume follows traffic rather than problems. On by default because the
+                     inventory it produces is the point of turning reporting on at all; the
+                     field says what it costs so a busy storefront can decide otherwise. -->
+                <report_hashes>1</report_hashes>
+            </reporturi>
+        </csp>
+    </default>
+</config>

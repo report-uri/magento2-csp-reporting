@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright (c) Report URI. All rights reserved.
+ * See LICENSE for the licence details.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Csp\Model\Policy\Renderer\SimplePolicyHeaderRenderer">
+        <plugin name="reporturi_cspreporting_repoint_reporting_api"
+                type="ReportUri\CspReporting\Plugin\RepointReportingApi"
+                sortOrder="10"/>
+        <plugin name="reporturi_cspreporting_add_reporting_keywords"
+                type="ReportUri\CspReporting\Plugin\AddReportingKeywords"
+                sortOrder="20"/>
+    </type>
+</config>
