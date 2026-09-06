@@ -166,8 +166,23 @@ them takes the storefront down with a 500. Setting them through this module is t
 
 ## Compatibility
 
-Magento Open Source and Adobe Commerce 2.4.4+, and Mage-OS. Admin-only: it adds no frontend
-output, so it is theme-agnostic and needs no Hyvä compatibility layer.
+Magento Open Source, Adobe Commerce and Mage-OS, on any release that carries the CSP admin
+fields. Those arrived in 2.4.7, and were backported into the security releases before it:
+
+| Release line | Works from |
+| --- | --- |
+| 2.4.4 | 2.4.4-p9 |
+| 2.4.5 | 2.4.5-p8 |
+| 2.4.6 | 2.4.6-p6 |
+| 2.4.7 and later | all |
+
+Composer enforces this against `magento/module-csp`, so an unpatched 2.4.4, 2.4.5 or 2.4.6
+refuses the install rather than half-working. On those, `Magento_Csp` ships no admin
+`system.xml` at all and the two payment-page config nodes do not exist, so there is nothing for
+this module to fill in.
+
+Admin-only: it adds no frontend output, so it is theme-agnostic and needs no Hyva
+compatibility layer.
 
 ## Links
 
