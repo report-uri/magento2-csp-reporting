@@ -69,6 +69,15 @@ jobs:
         run: |
           if [ -z "$MAGENTO_PUBLIC_KEY" ]; then exit 0; fi
           composer config repositories.magento composer https://repo.magento.com/
+          # Magento packages ship Composer plugins; Composer 2.2+ refuses to run them unless
+          # each is allow-listed, and the failure is an exception rather than a skip.
+          for plugin in \
+            magento/composer-dependency-version-audit-plugin \
+            magento/magento-composer-installer \
+            magento/inventory-composer-installer \
+            laminas/laminas-dependency-plugin; do
+            composer config --no-plugins "allow-plugins.$plugin" true
+          done
           composer require --dev --quiet phpunit/phpunit:^12
           composer install --quiet
 
