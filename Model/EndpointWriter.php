@@ -22,6 +22,14 @@ use ReportUri\CspReporting\Model\Config\Endpoints;
 class EndpointWriter
 {
 
+    /**
+     * EndpointWriter constructor.
+     *
+     * @param WriterInterface $configWriter
+     * @param ScopeConfigInterface $scopeConfig
+     * @param ReinitableConfigInterface $reinitableConfig
+     * @param Endpoints $endpoints
+     */
     public function __construct(
         private readonly WriterInterface $configWriter,
         private readonly ScopeConfigInterface $scopeConfig,
@@ -30,6 +38,13 @@ class EndpointWriter
     ) {
     }
 
+    /**
+     * Write the four native Report URI values for one scope.
+     *
+     * @param string $address
+     * @param string $scope
+     * @param int $scopeId
+     */
     public function apply(string $address, string $scope, int $scopeId): void
     {
         $values = $this->endpoints->valuesFor(trim($address), $scope, $scopeId);
@@ -53,6 +68,10 @@ class EndpointWriter
      * hand keeps it, rather than finding we quietly took their configuration away. The test is
      * whether the stored value is one of the two dispositions the previous address could have
      * produced.
+     *
+     * @param string $previousAddress
+     * @param string $scope
+     * @param int $scopeId
      */
     public function clear(string $previousAddress, string $scope, int $scopeId): void
     {
@@ -85,6 +104,9 @@ class EndpointWriter
      * field to delete() and afterSave() never runs (Magento\Config\Model\Config::_processGroup).
      * Without this the four endpoints keep whatever the last save gave them while the group that
      * produced them reads as unset - a store still reporting from a screen that says it is not.
+     *
+     * @param string $scope
+     * @param int $scopeId
      */
     public function reapplyFromConfig(string $scope, int $scopeId): void
     {
@@ -100,7 +122,6 @@ class EndpointWriter
 
         $this->apply($address, $scope, $scopeId);
     }
-
 
     /**
      * The four values were written straight to storage rather than through the form, so the

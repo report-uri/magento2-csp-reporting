@@ -101,6 +101,9 @@ class Endpoints
      */
     private const MAX_ADDRESS_LENGTH = 2048;
 
+    /**
+     * @var string
+     */
     private const ADDRESS_PATTERN = '~https://'
         . '(?<token>[a-z0-9]{4,32})\.'
         . '(?<host>(?:[a-z0-9-]+\.)*report-uri\.com)'
@@ -110,18 +113,32 @@ class Endpoints
         . 'a/(?<apiscope>[dt])/g'
         . ')~i';
 
+    /**
+     * Endpoints constructor.
+     *
+     * @param ScopeConfigInterface $scopeConfig
+     */
     public function __construct(
         private readonly ScopeConfigInterface $scopeConfig
     ) {
     }
 
+    /**
+     * Is this an address this module recognises?
+     *
+     * @param string $address
+     * @return bool
+     */
     public function isValidAddress(string $address): bool
     {
         return $this->parse($address) !== null;
     }
 
     /**
-     * @return array{token: string, host: string, scope: string}|null
+     * Pull the account details out of a pasted address.
+     *
+     * @param string $address
+     * @return ?array
      */
     public function parse(string $address): ?array
     {
@@ -153,8 +170,13 @@ class Endpoints
     }
 
     /**
-     * Rebuild the address with a chosen disposition, leaving token, host and account scope
-     * exactly as the merchant pasted them.
+     * Rebuild the address with a chosen disposition.
+     *
+     * Token, host and account scope are left exactly as the merchant pasted them.
+     *
+     * @param string $address
+     * @param string $disposition
+     * @return ?string
      */
     public function withDisposition(string $address, string $disposition): ?string
     {
@@ -177,11 +199,23 @@ class Endpoints
         );
     }
 
+    /**
+     * The report-only endpoint for an address.
+     *
+     * @param string $address
+     * @return ?string
+     */
     public function reportOnlyUrl(string $address): ?string
     {
         return $this->withDisposition($address, self::DISPOSITION_REPORT_ONLY);
     }
 
+    /**
+     * The enforce endpoint for an address.
+     *
+     * @param string $address
+     * @return ?string
+     */
     public function enforceUrl(string $address): ?string
     {
         return $this->withDisposition($address, self::DISPOSITION_ENFORCE);
@@ -190,7 +224,10 @@ class Endpoints
     /**
      * The four config paths mapped to the value each should carry, for one config scope.
      *
-     * @return array<string, string> config path => URL
+     * @param string $address
+     * @param string $scope
+     * @param int $scopeId
+     * @return array
      */
     public function valuesFor(string $address, string $scope, int $scopeId): array
     {
@@ -211,21 +248,27 @@ class Endpoints
         return $values;
     }
 
-
     /**
-     * @return string[] every config path this module writes
+     * Every config path this module writes.
+     *
+     * @return array
      */
     public function allPaths(): array
     {
         return array_keys(self::TARGETS);
     }
 
-
     /**
      * Does this page report rather than enforce?
      *
      * A page with no report_only of its own inherits its area's, which is why the fallback is
      * consulted rather than defaulted: null means "not configured here", and 0 means "enforce".
+     *
+     * @param string $modePath
+     * @param string|null $areaFallback
+     * @param string $scope
+     * @param int $scopeId
+     * @return bool
      */
     private function isReportOnly(string $modePath, ?string $areaFallback, string $scope, int $scopeId): bool
     {
@@ -247,6 +290,9 @@ class Endpoints
      *
      * The two are not interchangeable. The CSP endpoint takes application/csp-report and the
      * Reporting API endpoint takes application/reports+json; each rejects the other's format.
+     *
+     * @param string $cspAddress
+     * @return ?string
      */
     public function reportingApiUrl(string $cspAddress): ?string
     {
@@ -259,6 +305,12 @@ class Endpoints
         return sprintf('https://%s.%s/a/%s/g', $parts['token'], $parts['host'], $parts['scope']);
     }
 
+    /**
+     * The configured reporting address for a scope.
+     *
+     * @param string|null $scopeCode
+     * @return string
+     */
     public function getAddress(?string $scopeCode = null): string
     {
         $value = $this->scopeConfig->getValue(

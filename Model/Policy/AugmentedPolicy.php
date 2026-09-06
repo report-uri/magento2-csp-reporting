@@ -24,7 +24,8 @@ class AugmentedPolicy implements PolicyInterface
 {
 
     /**
-     * @param string[] $additions source expressions to append, already quoted
+     * @param PolicyInterface $policy
+     * @param array $additions
      */
     public function __construct(
         private readonly PolicyInterface $policy,
@@ -32,11 +33,21 @@ class AugmentedPolicy implements PolicyInterface
     ) {
     }
 
+    /**
+     * The decorated policy id, unchanged.
+     *
+     * @return string
+     */
     public function getId(): string
     {
         return $this->policy->getId();
     }
 
+    /**
+     * The decorated policy value, with the extra source expressions appended.
+     *
+     * @return string
+     */
     public function getValue(): string
     {
         $value = $this->policy->getValue();

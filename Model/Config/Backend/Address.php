@@ -29,6 +29,19 @@ use ReportUri\CspReporting\Model\EndpointWriter;
 class Address extends Value
 {
 
+    /**
+     * Address constructor.
+     *
+     * @param Context $context
+     * @param Registry $registry
+     * @param ScopeConfigInterface $config
+     * @param TypeListInterface $cacheTypeList
+     * @param EndpointWriter $endpointWriter
+     * @param Endpoints $endpoints
+     * @param AbstractResource|null $resource
+     * @param AbstractDb|null $resourceCollection
+     * @param array $data
+     */
     public function __construct(
         Context $context,
         Registry $registry,
@@ -44,6 +57,8 @@ class Address extends Value
     }
 
     /**
+     * Validate and normalise the pasted address.
+     *
      * @throws LocalizedException
      */
     public function beforeSave(): self
@@ -71,6 +86,9 @@ class Address extends Value
         return $this;
     }
 
+    /**
+     * Write or clear the four native fields to match.
+     */
     public function afterSave(): self
     {
         $address = trim((string)$this->getValue());
@@ -88,9 +106,14 @@ class Address extends Value
 
     /**
      * Captured before the row goes, so afterDelete() still knows which endpoints were ours.
+     *
+     * @var string
      */
     private string $addressBeingDeleted = '';
 
+    /**
+     * Remember the address before the row is removed.
+     */
     public function beforeDelete(): self
     {
         $this->addressBeingDeleted = trim((string)$this->getOldValue());
@@ -113,5 +136,4 @@ class Address extends Value
 
         return parent::afterDelete();
     }
-
 }

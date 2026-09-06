@@ -22,7 +22,13 @@ class EndpointsTest extends TestCase
     private const PERSONAL = 'https://abc123.report-uri.com/r/d/csp/reportOnly';
     private const TEAM = 'https://abc123.report-uri.com/r/t/csp/reportOnly';
 
+    /**
+     * @var ScopeConfigInterface
+     */
     private ScopeConfigInterface $scopeConfig;
+    /**
+     * @var Endpoints
+     */
     private Endpoints $endpoints;
 
     protected function setUp(): void
@@ -167,7 +173,8 @@ class EndpointsTest extends TestCase
             [
                 'csp/mode/storefront/report_uri' => 'https://abc123.report-uri.com/r/d/csp/reportOnly',
                 'csp/mode/admin/report_uri' => 'https://abc123.report-uri.com/r/d/csp/reportOnly',
-                'csp/mode/storefront_checkout_index_index/report_uri' => 'https://abc123.report-uri.com/r/d/csp/enforce',
+                'csp/mode/storefront_checkout_index_index/report_uri' =>
+                    'https://abc123.report-uri.com/r/d/csp/enforce',
                 'csp/mode/admin_sales_order_create_index/report_uri' => 'https://abc123.report-uri.com/r/d/csp/enforce',
             ],
             $this->endpoints->valuesFor(self::PERSONAL, 'default', 0)

@@ -27,6 +27,9 @@ class EndpointsInjectionTest extends TestCase
 {
     private const VALID = 'https://abc123.report-uri.com/r/d/csp/reportOnly';
 
+    /**
+     * @var Endpoints
+     */
     private Endpoints $endpoints;
 
     protected function setUp(): void

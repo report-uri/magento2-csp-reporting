@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  coding-standard:
+    name: Magento coding standard (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.1', '8.2', '8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Lint every PHP file
+        run: find . -path ./vendor -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      # magento/magento-coding-standard is on public Packagist, so this needs no Adobe
+      # credentials and runs on forks and outside pull requests.
+      - name: Install the coding standard
+        run: |
+          composer init --name=reporturi/cs-runner --no-interaction --quiet
+          composer config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          composer require --dev --quiet magento/magento-coding-standard
+
+      - name: Run phpcs
+        run: vendor/bin/phpcs --standard=Magento2 --extensions=php --error-severity=1 --warning-severity=0 Model Plugin registration.php
+
+  tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    # magento/framework and magento/module-csp only exist on repo.magento.com, so this job needs
+    # credentials. It is skipped rather than failed on forks, which cannot see the secret.
+    if: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Authenticate to repo.magento.com
+        env:
+          MAGENTO_PUBLIC_KEY: ${{ secrets.MAGENTO_PUBLIC_KEY }}
+          MAGENTO_PRIVATE_KEY: ${{ secrets.MAGENTO_PRIVATE_KEY }}
+        run: |
+          if [ -z "$MAGENTO_PUBLIC_KEY" ]; then
+            echo "No Magento credentials configured - skipping." >&2
+            exit 0
+          fi
+          composer config --global http-basic.repo.magento.com "$MAGENTO_PUBLIC_KEY" "$MAGENTO_PRIVATE_KEY"
+
+      - name: Install dependencies
+        env:
+          MAGENTO_PUBLIC_KEY: ${{ secrets.MAGENTO_PUBLIC_KEY }}
+        run: |
+          if [ -z "$MAGENTO_PUBLIC_KEY" ]; then exit 0; fi
+          composer config repositories.magento composer https://repo.magento.com/
+          composer require --dev --quiet phpunit/phpunit:^12
+          composer install --quiet
+
+      - name: Run the tests
+        env:
+          MAGENTO_PUBLIC_KEY: ${{ secrets.MAGENTO_PUBLIC_KEY }}
+        run: |
+          if [ -z "$MAGENTO_PUBLIC_KEY" ]; then
+            echo "Skipped - no credentials." && exit 0
+          fi
+          vendor/bin/phpunit -c phpunit.xml.dist --no-coverage

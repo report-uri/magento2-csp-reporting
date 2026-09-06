@@ -58,12 +58,27 @@ class RepointReportingApi
         'Content-Security-Policy-Report-Only',
     ];
 
+    /**
+     * RepointReportingApi constructor.
+     *
+     * @param Json $json
+     * @param Endpoints $endpoints
+     */
     public function __construct(
         private readonly Json $json,
         private readonly Endpoints $endpoints
     ) {
     }
 
+    /**
+     * Point the Reporting API headers at the Reporting API endpoint.
+     *
+     * @param SimplePolicyHeaderRenderer $subject
+     * @param array|null $result
+     * @param PolicyInterface $policy
+     * @param HttpResponse $response
+     * @return ?array
+     */
     public function afterRender(
         SimplePolicyHeaderRenderer $subject,
         ?array $result,
@@ -116,6 +131,9 @@ class RepointReportingApi
      * Both header names are checked because a store can carry an enforced policy and a
      * report-only one at the same time - Magento_Checkout enforces while the rest of the
      * storefront reports - and each is rendered into its own header.
+     *
+     * @param HttpResponse $response
+     * @param string $groupName
      */
     private function renameGroupInPolicies(HttpResponse $response, string $groupName): void
     {
@@ -140,7 +158,10 @@ class RepointReportingApi
     }
 
     /**
-     * @return array{0: string, 1: string, 2: int}|null group name, endpoint URL, max age
+     * Read the group name, endpoint and max age out of a Report-To header.
+     *
+     * @param string $headerValue
+     * @return ?array
      */
     private function parseGroup(string $headerValue): ?array
     {

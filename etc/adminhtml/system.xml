@@ -16,20 +16,33 @@
         <section id="csp">
             <group id="reporturi" translate="label comment" type="text" sortOrder="0" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Report URI</label>
-                <comment><![CDATA[Fills in the four Report URI fields below. <a href="https://docs.report-uri.com/platforms/adobe-commerce/" target="_blank">Setup guide</a>]]></comment>
+                <comment><![CDATA[
+                    Fills in the four Report URI fields below. <a
+                    href="https://docs.report-uri.com/platforms/adobe-commerce/" target="_blank">Setup guide</a>
+                ]]></comment>
                 <field id="address" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Reporting address</label>
-                    <comment><![CDATA[Copy any address from your Report URI <a href="https://report-uri.com/account/setup/" target="_blank">Setup</a> page and paste it whole. Leave empty to remove the endpoints it set.]]></comment>
+                    <comment><![CDATA[
+                        Copy any address from your Report URI <a href="https://report-uri.com/account/setup/"
+                        target="_blank">Setup</a> page and paste it whole. Leave empty to remove the endpoints it
+                        set.
+                    ]]></comment>
                     <backend_model>ReportUri\CspReporting\Model\Config\Backend\Address</backend_model>
                 </field>
                 <field id="report_sample" translate="label comment" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
                     <label>Include a sample of the blocked script</label>
-                    <comment><![CDATA[Adds <code>'report-sample'</code> to <code>script-src</code>, so reports carry the first 40 characters of what was blocked. Sends no extra reports.]]></comment>
+                    <comment><![CDATA[
+                        Adds <code>'report-sample'</code> to <code>script-src</code>, so reports carry the first 40
+                        characters of what was blocked. Sends no extra reports.
+                    ]]></comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
                 <field id="report_hashes" translate="label comment" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
                     <label>Collect script integrity metadata</label>
-                    <comment><![CDATA[Adds <code>'report-sha256'</code> to <code>script-src</code> to enable <a href="https://docs.report-uri.com/setup/csp-integrity/" target="_blank">CSP Integrity</a>.]]></comment>
+                    <comment><![CDATA[
+                        Adds <code>'report-sha256'</code> to <code>script-src</code> to enable <a
+                        href="https://docs.report-uri.com/setup/csp-integrity/" target="_blank">CSP Integrity</a>.
+                    ]]></comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
             </group>

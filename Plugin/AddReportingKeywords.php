@@ -43,13 +43,23 @@ class AddReportingKeywords
     private const KEYWORD_SAMPLE = "'report-sample'";
     private const KEYWORD_HASHES = "'report-sha256'";
 
+    /**
+     * AddReportingKeywords constructor.
+     *
+     * @param ScopeConfigInterface $scopeConfig
+     */
     public function __construct(
         private readonly ScopeConfigInterface $scopeConfig
     ) {
     }
 
     /**
-     * @return array{0: PolicyInterface, 1: HttpResponse}
+     * Decorate script-src with the enabled reporting keywords.
+     *
+     * @param SimplePolicyHeaderRenderer $subject
+     * @param PolicyInterface $policy
+     * @param HttpResponse $response
+     * @return array
      */
     public function beforeRender(
         SimplePolicyHeaderRenderer $subject,
@@ -77,6 +87,12 @@ class AddReportingKeywords
         return [new AugmentedPolicy($policy, $additions), $response];
     }
 
+    /**
+     * Is this config flag on for the current scope?
+     *
+     * @param string $path
+     * @return bool
+     */
     private function isEnabled(string $path): bool
     {
         return $this->scopeConfig->isSetFlag($path, ScopeInterface::SCOPE_STORE);

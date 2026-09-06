@@ -17,7 +17,13 @@ use ReportUri\CspReporting\Plugin\AddReportingKeywords;
 
 class AddReportingKeywordsTest extends TestCase
 {
+    /**
+     * @var SimplePolicyHeaderRenderer
+     */
     private SimplePolicyHeaderRenderer $renderer;
+    /**
+     * @var HttpInterface
+     */
     private HttpInterface $response;
 
     protected function setUp(): void

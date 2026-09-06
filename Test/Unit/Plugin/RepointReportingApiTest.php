@@ -32,9 +32,21 @@ class RepointReportingApiTest extends TestCase
     /** @var array<string, string> */
     private array $headers = [];
 
+    /**
+     * @var HttpInterface
+     */
     private HttpInterface $response;
+    /**
+     * @var RepointReportingApi
+     */
     private RepointReportingApi $plugin;
+    /**
+     * @var SimplePolicyHeaderRenderer
+     */
     private SimplePolicyHeaderRenderer $renderer;
+    /**
+     * @var PolicyInterface
+     */
     private PolicyInterface $policy;
 
     protected function setUp(): void

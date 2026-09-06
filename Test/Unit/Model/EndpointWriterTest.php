@@ -27,6 +27,9 @@ class EndpointWriterTest extends TestCase
     /** @var list<string> */
     private array $deleted = [];
 
+    /**
+     * @var EndpointWriter
+     */
     private EndpointWriter $writer;
 
     protected function setUp(): void
