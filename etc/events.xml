@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright (c) Report URI. All rights reserved.
+ * See LICENSE for the licence details.
+ */
+-->
+<!-- Global rather than adminhtml: bin/magento config:set dispatches the same event outside the
+     admin area. -->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="admin_system_config_changed_section_csp">
+        <observer name="reporturi_cspreporting_sync_endpoints"
+                  instance="ReportUri\CspReporting\Observer\SyncEndpoints"/>
+    </event>
+</config>

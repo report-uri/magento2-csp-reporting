@@ -61,6 +61,130 @@ class EndpointWriter
     }
 
     /**
+     * Address changes waiting for the config save around them to finish.
+     *
+     * @var array<string, array{address: string, previous: string, scope: string, scopeId: int}>
+     */
+    private array $pending = [];
+
+    /**
+     * Record an address change, to be written by flush() once the save around it is done.
+     *
+     * Writing during the address field's own save does not survive the admin form. Magento saves
+     * every field on the page in one transaction (Magento\Config\Model\Config::save), and the four
+     * native Report URI fields are on that page below this one - so they save after it, with
+     * whatever the form posted for them. On a store that has never had them filled in, that is
+     * empty, and the four values written a moment earlier are overwritten with NULL. The merchant
+     * sees an address that saved and a storefront with no reporting at all.
+     *
+     * Several changes to one scope in a request collapse into one: the first previous address
+     * (what was in force before any of them) and the last new one.
+     *
+     * @param string $address The address now saved; empty when it was cleared or removed
+     * @param string $previousAddress The address in force before this change
+     * @param string $scope
+     * @param int $scopeId
+     */
+    public function queue(string $address, string $previousAddress, string $scope, int $scopeId): void
+    {
+        $key = $scope . ':' . $scopeId;
+
+        $this->pending[$key] = [
+            'address' => trim($address),
+            'previous' => $this->pending[$key]['previous'] ?? trim($previousAddress),
+            'scope' => $scope,
+            'scopeId' => $scopeId,
+        ];
+    }
+
+    /**
+     * Write every queued change. Safe to call more than once; the queue empties as it goes.
+     */
+    public function flush(): void
+    {
+        $pending = $this->pending;
+        $this->pending = [];
+
+        foreach ($pending as $change) {
+            $this->sync($change['address'], $change['previous'], $change['scope'], $change['scopeId']);
+        }
+    }
+
+    /**
+     * Bring the four native values in line with the address, after everything else has saved.
+     *
+     * A field is written when it is empty or still holds a value this module produced, from
+     * either address. Anything else is a value the merchant typed into the native field
+     * themselves, and they keep it - the native fields stay theirs to override.
+     *
+     * Config is re-read first: the save that just finished wrote straight to storage, and the
+     * dispositions depend on report_only values that may have changed on the same page.
+     *
+     * @param string $address
+     * @param string $previousAddress
+     * @param string $scope
+     * @param int $scopeId
+     */
+    public function sync(string $address, string $previousAddress, string $scope, int $scopeId): void
+    {
+        $address = trim($address);
+
+        $this->refresh();
+
+        if ($address === '') {
+            $this->clear($previousAddress, $scope, $scopeId);
+
+            return;
+        }
+
+        $values = $this->endpoints->valuesFor($address, $scope, $scopeId);
+
+        if ($values === []) {
+            return;
+        }
+
+        $ours = array_merge($this->ourUrls($previousAddress), $this->ourUrls($address));
+        $written = false;
+
+        foreach ($values as $path => $url) {
+            $current = (string)$this->scopeConfig->getValue($path, $scope, $scopeId ?: null);
+
+            if ($current === $url) {
+                continue;
+            }
+
+            if ($current === '' || in_array($current, $ours, true)) {
+                $this->configWriter->save($path, $url, $scope, $scopeId);
+                $written = true;
+            }
+        }
+
+        if ($written) {
+            $this->refresh();
+        }
+    }
+
+    /**
+     * Both endpoints an address can produce, or none if it is not a Report URI address.
+     *
+     * @param string $address
+     * @return string[]
+     */
+    private function ourUrls(string $address): array
+    {
+        $address = trim($address);
+
+        if (!$this->endpoints->isValidAddress($address)) {
+            return [];
+        }
+
+        return [
+            (string)$this->endpoints->reportOnlyUrl($address),
+            (string)$this->endpoints->enforceUrl($address),
+        ];
+    }
+
+    /**
      * Remove only the endpoints this module put there.
      *
      * Emptying the address means "stop reporting", so leaving the URLs behind would be wrong.

@@ -147,6 +147,104 @@ class EndpointWriterTest extends TestCase
         $this->assertSame(self::ENFORCE, $this->stored['csp/mode/storefront_checkout_index_index/report_uri']);
     }
 
+    /**
+     * The admin form saves the four native fields after the address, with whatever was posted.
+     * On a store that never had them filled that is empty - which is what sync() runs after.
+     */
+    public function testSyncFillsFieldsTheFormLeftEmpty(): void
+    {
+        foreach ($this->endpoints()->allPaths() as $path) {
+            $this->stored[$path] = '';
+        }
+
+        $this->writer->sync(self::ADDRESS, '', 'default', 0);
+
+        $this->assertSame(self::REPORT_ONLY, $this->stored['csp/mode/storefront/report_uri']);
+        $this->assertSame(self::REPORT_ONLY, $this->stored['csp/mode/admin/report_uri']);
+        $this->assertSame(self::ENFORCE, $this->stored['csp/mode/storefront_checkout_index_index/report_uri']);
+        $this->assertSame(self::ENFORCE, $this->stored['csp/mode/admin_sales_order_create_index/report_uri']);
+    }
+
+    public function testSyncKeepsAValueTheMerchantSetThemselves(): void
+    {
+        $this->stored['csp/mode/storefront/report_uri'] = 'https://collector.example.com/csp';
+
+        $this->writer->sync(self::ADDRESS, '', 'default', 0);
+
+        $this->assertSame('https://collector.example.com/csp', $this->stored['csp/mode/storefront/report_uri']);
+        $this->assertCount(3, $this->saved);
+    }
+
+    public function testSyncReplacesTheEndpointsOfThePreviousAddress(): void
+    {
+        $old = 'https://old999.report-uri.com/r/t/csp/reportOnly';
+        $this->writer->apply($old, 'default', 0);
+        $this->saved = [];
+
+        $this->writer->sync(self::ADDRESS, $old, 'default', 0);
+
+        $this->assertCount(4, $this->saved);
+        $this->assertSame(self::ENFORCE, $this->stored['csp/mode/admin_sales_order_create_index/report_uri']);
+    }
+
+    public function testSyncWritesNothingWhenAlreadyInLine(): void
+    {
+        $this->writer->apply(self::ADDRESS, 'default', 0);
+        $this->saved = [];
+
+        $this->writer->sync(self::ADDRESS, self::ADDRESS, 'default', 0);
+
+        $this->assertSame([], $this->saved);
+    }
+
+    public function testSyncWithNoAddressClearsWhatThePreviousOneWrote(): void
+    {
+        $this->writer->apply(self::ADDRESS, 'default', 0);
+
+        $this->writer->sync('', self::ADDRESS, 'default', 0);
+
+        $this->assertCount(4, $this->deleted);
+    }
+
+    /**
+     * Nothing is written until flush(): queue() runs inside the save, flush() after it.
+     */
+    public function testQueueWritesNothingUntilFlushed(): void
+    {
+        $this->writer->queue(self::ADDRESS, '', 'default', 0);
+        $this->assertSame([], $this->saved);
+
+        $this->writer->flush();
+        $this->assertCount(4, $this->saved);
+
+        $this->saved = [];
+        $this->writer->flush();
+        $this->assertSame([], $this->saved, 'A second flush must find the queue empty');
+    }
+
+    /**
+     * Two changes to one scope in a request: the endpoints in force before the first are what
+     * get replaced, and the last address is what replaces them.
+     */
+    public function testQueueCollapsesChangesToOneScope(): void
+    {
+        $first = 'https://first11.report-uri.com/r/d/csp/reportOnly';
+        $this->writer->apply($first, 'default', 0);
+        $this->saved = [];
+
+        $this->writer->queue('https://middle22.report-uri.com/r/d/csp/reportOnly', $first, 'default', 0);
+        $this->writer->queue(self::ADDRESS, 'https://middle22.report-uri.com/r/d/csp/reportOnly', 'default', 0);
+        $this->writer->flush();
+
+        $this->assertCount(4, $this->saved);
+        $this->assertSame(self::REPORT_ONLY, $this->stored['csp/mode/storefront/report_uri']);
+    }
+
+    private function endpoints(): Endpoints
+    {
+        return new Endpoints($this->createStub(ScopeConfigInterface::class));
+    }
+
     public function testReapplyFromConfigDoesNothingWithNoAddressStored(): void
     {
         $this->writer->reapplyFromConfig('default', 0);
