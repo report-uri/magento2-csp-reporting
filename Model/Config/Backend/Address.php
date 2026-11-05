@@ -19,15 +19,28 @@ use ReportUri\CspReporting\Model\Config\Endpoints;
 use ReportUri\CspReporting\Model\EndpointWriter;
 
 /**
- * The reporting address field: validates it, then writes the four native Report URI values
+ * The reporting address field: validates it, then has the four native Report URI values written
  * from it.
  *
  * Those values land in the same config rows the native fields use, so the native fields keep
  * showing what is actually in force and stay editable afterwards. Nothing here hides or locks
  * them.
+ *
+ * Nothing is written from inside this field's own save. The native fields are on the same admin
+ * page and save after it in the same transaction, with whatever the form posted - so a value
+ * written here would be overwritten a moment later. The change is queued instead and written
+ * once the whole page has saved: by ReportUri\CspReporting\Observer\SyncEndpoints for the admin
+ * form and bin/magento config:set, and by afterCommitCallback() for a direct save of this value.
  */
 class Address extends Value
 {
+
+    /**
+     * The address in force before this save or delete, captured while config still holds it.
+     *
+     * @var string
+     */
+    private string $previousAddress = '';
 
     /**
      * Address constructor.
@@ -82,41 +95,46 @@ class Address extends Value
         }
 
         $this->setValue($value);
+        $this->previousAddress = trim((string)$this->getOldValue());
 
-        return $this;
+        return parent::beforeSave();
     }
 
     /**
-     * Write or clear the four native fields to match.
+     * Queue the four native fields to match, once the rest of the page has saved.
      */
     public function afterSave(): self
     {
-        $address = trim((string)$this->getValue());
-        $scope = $this->getScope();
-        $scopeId = (int)$this->getScopeId();
-
-        if ($address === '') {
-            $this->endpointWriter->clear((string)$this->getOldValue(), $scope, $scopeId);
-        } else {
-            $this->endpointWriter->apply($address, $scope, $scopeId);
-        }
+        $this->endpointWriter->queue(
+            trim((string)$this->getValue()),
+            $this->previousAddress,
+            (string)$this->getScope(),
+            (int)$this->getScopeId()
+        );
 
         return parent::afterSave();
     }
 
     /**
-     * Captured before the row goes, so afterDelete() still knows which endpoints were ours.
+     * Write the queued change for a save that did not come through Magento's config model.
      *
-     * @var string
+     * Runs when the outermost transaction commits. For the admin form and config:set that is
+     * after every field on the page has saved, so writing here is already late enough - the
+     * observer that runs afterwards then finds an empty queue.
      */
-    private string $addressBeingDeleted = '';
+    public function afterCommitCallback(): self
+    {
+        $this->endpointWriter->flush();
+
+        return parent::afterCommitCallback();
+    }
 
     /**
      * Remember the address before the row is removed.
      */
     public function beforeDelete(): self
     {
-        $this->addressBeingDeleted = trim((string)$this->getOldValue());
+        $this->previousAddress = trim((string)$this->getOldValue());
 
         return parent::beforeDelete();
     }
@@ -125,14 +143,13 @@ class Address extends Value
      * Ticking "Use system value" deletes this row rather than saving an empty one, so afterSave()
      * never runs. Clearing an address by emptying the field and clearing it by inheriting have to
      * end in the same place, or the four endpoints outlive the setting that created them.
+     *
+     * Deliberately not flushed on commit: Magento commits its deletes before its saves, so the
+     * native fields have not been written yet. SyncEndpoints flushes this after both.
      */
     public function afterDelete(): self
     {
-        $this->endpointWriter->clear(
-            $this->addressBeingDeleted,
-            $this->getScope(),
-            (int)$this->getScopeId()
-        );
+        $this->endpointWriter->queue('', $this->previousAddress, (string)$this->getScope(), (int)$this->getScopeId());
 
         return parent::afterDelete();
     }
